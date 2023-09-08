@@ -19,7 +19,7 @@ def preprocess_data(data):
 # Split dataframe into 3 dataframes- train, dev and test
 def split_train_dev_test(X, y, test_size, dev_size):
     X_train, X_dev_test, y_train, y_dev_test = train_test_split(X, y, test_size=(test_size + dev_size), shuffle=False)
-    test_size_in_dev_test=dev_size / test_size + dev_size
+    test_size_in_dev_test=dev_size / (test_size + dev_size)
     X_dev, X_test, y_dev, y_test = train_test_split(X_dev_test, y_dev_test, test_size=test_size_in_dev_test,
                                                     shuffle=False)
     return X_train, X_dev, X_test, y_train, y_dev, y_test
@@ -64,5 +64,31 @@ def predict_and_eval(model, X_test, y_test):
 
     predicted = model.predict(X_test)
     acc=metrics.accuracy_score(y_test, predicted)
-    print("Accuracy is ", acc)
+    # print("Accuracy is ", acc)
     return acc
+
+
+
+def tune_hparams(X_train, y_train, X_dev, y_dev, list_of_all_param_combination):
+
+    # initialize the metrics
+    best_acc_so_far = -1
+    best_model = None
+    best_hparams = None
+    best_train_acc = -1
+
+    #for each combination train a model and capture dev accuracy
+    for param_combination in list_of_all_param_combination:
+
+        model_params = {"gamma": param_combination[0], "C": param_combination[1]}
+        model = train_model(X_train, y_train, model_params)
+        cur_dev_accuracy = predict_and_eval(model, X_dev, y_dev)
+
+        # If dev accuracy is more than best captured accuracy, update the best hyper parameters
+        if cur_dev_accuracy > best_acc_so_far:
+            best_acc_so_far = cur_dev_accuracy
+            best_model = model
+            best_hparams = model_params
+
+    return best_hparams, best_model, best_acc_so_far
+

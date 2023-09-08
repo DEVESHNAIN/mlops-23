@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from sklearn import datasets, metrics, svm
 from sklearn.model_selection import train_test_split
 from utils import *
+import itertools
 
 ###############################################################################
 # Digits dataset
@@ -26,21 +27,39 @@ X, y = read_digits()
 
 
 
-# 4. Data splitting -- to create train, dev and test sets
-# Split data into 50% train , 20% dev and 30% text subsets
 
-X_train, X_dev, X_test, y_train, y_dev, y_test = split_train_dev_test(
-    X, y, test_size=0.3,dev_size=0.2
-)
+# 3. Data splitting into multiple ratios to create train and test sets
+test_sizes = [0.1, 0.2, 0.3]
+dev_sizes = [0.1, 0.2, 0.3]
 
-X_train = preprocess_data(X_train)
-X_test = preprocess_data(X_test)
+# print (itertools.product(test_sizes, dev_sizes))
 
-# 5. Model training
-# Create a classifier: a support vector classifier
-clf=train_model(X_train, y_train, {'gamma':0.001 , "C":1}, model_type="svm")
+for test_size, dev_size in itertools.product(test_sizes, dev_sizes):
+    print(f"test_size={test_size} dev_size={dev_size} train_size={1 - test_size - dev_size}", end=' ')
+    
+    X_train, X_dev,X_test, y_train, y_dev, y_test = split_train_dev_test(X, y, test_size=test_size, dev_size=dev_size)
+    
+    # 4. Data preprocessing
+    X_train = preprocess_data(X_train)
+    X_test = preprocess_data(X_test)
+    X_dev = preprocess_data(X_dev)
 
-# # 6. Getting model predictions on test set
-# # Predict the value of the digit on the test subset
+    # HYPERPARAMETER TUNING
+    # Create a list of tuples with all combinations of hyper parameter gamma and C
+    gamma_values = [0.001, 0.01, 0.1, 1, 10, 100]
+    C_values = [0.1, 1, 2, 5, 10]
+    all_possible_param_combinations = list(itertools.product(gamma_values, C_values))
 
-predict_and_eval(clf,X_test,y_test)
+    best_hparams, best_model, best_dev_acc = tune_hparams(X_train, y_train, X_dev, y_dev, all_possible_param_combinations)
+
+    # Train  model on best hyper parameter
+
+    trained_model = train_model(X_train, y_train, best_hparams)
+    # calculate test and train accuracy on best hyper parameter trained model
+    test_accuracy = predict_and_eval(trained_model, X_test, y_test)
+    train_accuracy = predict_and_eval(trained_model, X_train, y_train)
+
+    print(f"dev_acc={best_dev_acc:.2f} test_acc={test_accuracy:.2f} train_acc={train_accuracy:.2f}")
+    
+    # log the best hyperparameters 
+    print(f"Best hyperparameters: gamma={best_hparams['gamma']}, C={best_hparams['C']}\n")
