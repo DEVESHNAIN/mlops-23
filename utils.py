@@ -69,7 +69,7 @@ def predict_and_eval(model, X_test, y_test):
 
 
 
-def tune_hparams(X_train, y_train, X_dev, y_dev, list_of_all_param_combination):
+def tune_hparams(X_train, y_train, X_dev, y_dev, list_of_all_param_comb):
 
     # initialize the metrics
     best_acc_so_far = -1
@@ -77,18 +77,41 @@ def tune_hparams(X_train, y_train, X_dev, y_dev, list_of_all_param_combination):
     best_hparams = None
     best_train_acc = -1
 
-    #for each combination train a model and capture dev accuracy
-    for param_combination in list_of_all_param_combination:
+    #for each comb train a model and capture dev accuracy
+    for param_comb in list_of_all_param_comb:
 
-        model_params = {"gamma": param_combination[0], "C": param_combination[1]}
-        model = train_model(X_train, y_train, model_params)
+        # model_params = {"gamma": param_comb[0], "C": param_comb[1]}
+        model = train_model(X_train, y_train, param_comb)
         cur_dev_accuracy = predict_and_eval(model, X_dev, y_dev)
 
         # If dev accuracy is more than best captured accuracy, update the best hyper parameters
         if cur_dev_accuracy > best_acc_so_far:
             best_acc_so_far = cur_dev_accuracy
             best_model = model
-            best_hparams = model_params
+            best_hparams = param_comb
 
     return best_hparams, best_model, best_acc_so_far
 
+
+
+def get_param_combs(name_of_param, value_of_param, base_param_comb):    
+    new_comb = []
+
+    for value in value_of_param:
+
+        for comb in base_param_comb:
+
+            comb[name_of_param] = value
+            new_comb.append(comb.copy()) 
+
+    return new_comb
+
+
+def fetch_hyperparameter_combinations(param_list_dict):    
+    base_comb = [{}]
+
+    for name_of_param, value_of_param in param_list_dict.items():
+
+        base_comb = get_param_combs(name_of_param, value_of_param, base_comb)
+
+    return base_comb
