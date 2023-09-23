@@ -23,4 +23,5 @@ jobs:
       - name: Run Pytest
         run: pytest
       - name: Run experiment
+        run: echo "This is sample echo statement in actions yaml file as part of experiment"
         run: python exp.py

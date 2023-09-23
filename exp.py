@@ -23,15 +23,19 @@ import itertools
 
 # 1.read the dataset using read digit functin
 X, y = read_digits()
+sample_size=len(X)
 
-
-
+print(f"Total no of sample in dataset = {sample_size}")
+height,width=X[0].shape
+print(f"Size of image: height is { height } and width is { width }")
 
 
 # 3. Data splitting into multiple ratios to create train and test sets
 test_sizes = [0.1, 0.2, 0.3]
 dev_sizes = [0.1, 0.2, 0.3]
 
+test_sizes = [0.1]
+dev_sizes = [0.1]
 
 # print (itertools.product(test_sizes, dev_sizes))
 
