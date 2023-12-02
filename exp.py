@@ -71,7 +71,15 @@ for iterations in  range(no_of_iterations_run) :
             max_depth_list = [5, 10, 15, 20, 50, 100]
             tree_parameters = {}
             tree_parameters['max_depth'] = max_depth_list
-            ml_model_algorithms = ['svm', 'tree']
+
+            solver_list=['lbfgs', 'liblinear', 'newton-cg', 'saga']
+            logistic_parameters={}
+            logistic_parameters['solver']=solver_list
+
+            # ml_model_algorithms = ['tree','svm']
+            ml_model_algorithms = ['tree','svm','logisticRegression']
+
+
             
             # for each model algorithm train a model and save the best model 
 
@@ -114,6 +122,27 @@ for iterations in  range(no_of_iterations_run) :
                     
                     current_model_output2 = {'ml_model_type': ml_model_type, 'iterations': iterations, 'train_accuracy' : train_accuracy, 'dev_accuracy': dev_accuracy, 'test_accuracy': test_accuracy}
                     output_res.append(current_model_output2)
+                    
+                    print("Accuracy_test  : {0:2f}% Accuracy_dev  : {1:2f}% Accuracy_train  : {2:2f}% ".format((test_accuracy*100),(dev_accuracy*100),(train_accuracy*100)))
+                # load the best of both model          
+                #best_trained_model = load(best_scored_model_path)
+
+                if ml_model_type == "logisticRegression" :
+
+                # tune the hyper parameter and capture the best scored trained model
+                    best_hyperparams, best_scored_model_path, best_model_accuracy = tune_hparams_svm( X_train, y_train,X_dev, y_dev,logistic_parameters,model_type ='lr')
+                
+                    
+                    # load the best trained model         
+                    best_trained_model = load(best_scored_model_path)
+                    
+                    #evaluate the best trained model 
+                    train_accuracy,_ = predict_and_eval(best_trained_model, X_train, y_train)
+                    dev_accuracy,_ = predict_and_eval(best_trained_model, X_dev, y_dev)
+                    test_accuracy,_ = predict_and_eval(best_trained_model, X_test, y_test)
+                    
+                    current_model_output3 = {'ml_model_type': ml_model_type, 'iterations': iterations, 'train_accuracy' : train_accuracy, 'dev_accuracy': dev_accuracy, 'test_accuracy': test_accuracy}
+                    output_res.append(current_model_output3)
                     
                     print("Accuracy_test  : {0:2f}% Accuracy_dev  : {1:2f}% Accuracy_train  : {2:2f}% ".format((test_accuracy*100),(dev_accuracy*100),(train_accuracy*100)))
                 # load the best of both model          

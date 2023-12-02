@@ -7,6 +7,8 @@ import os,pdb
 from joblib import dump, load
 from sklearn import tree
 from sklearn.metrics import accuracy_score
+from sklearn import preprocessing
+from sklearn import linear_model
 
 # read the input data
 def read_digits():
@@ -20,7 +22,11 @@ def preprocessing_data(data):
     # flatten the images
     n_samples = len(data)
     data = data.reshape((n_samples, -1))
-    return data
+
+    # normalize the samples
+    normalized_data=preprocessing.normalize(data)
+
+    return normalized_data
 
 # Split dataframe into 3 dataframes- train, dev and test
 def split_train_dev_test(X, y, test_size, dev_size):
@@ -177,7 +183,7 @@ def tune_hparams_svm( X_train, Y_train, x_dev, y_dev,list_of_all_param_combinati
     os.makedirs('models', exist_ok=True)
     # define model name based on hyper parameters and model path
        
-    model_path = "./models/{}_".format(model_type) +"_".join(["{}_{}".format(k,v) for k,v in best_hyperparams.items()]) + ".joblib"
+    model_path = "./models/M22AIE247_{}_".format(model_type) +"_".join(["{}_{}".format(k,v) for k,v in best_hyperparams.items()]) + ".joblib"
     print(model_path)
     # dump the best_model    
     dump(best_model, model_path)
@@ -196,6 +202,13 @@ def train_model(x, y, model_params, model_type="svm"):
 
     if model_type == "tree":
         clf = tree.DecisionTreeClassifier
+        
+        model = clf(**model_params)
+
+        model.fit(x, y)
+    
+    if model_type == "lr":
+        clf = linear_model.LogisticRegression
         
         model = clf(**model_params)
 
@@ -235,7 +248,46 @@ def tune_hparams_tree( X_train, Y_train,x_dev, y_dev,list_of_all_param_combinati
             best_accuracy = best_model_score[1]
     
     # defining the model path and model name wrt to the hyper parameters of the model 
-    model_path = "./models/{}_".format(model_type) +"_".join(["{}_{}".format(k,v) for k,v in best_hyperparams.items()]) + ".joblib"
+    model_path = "./models/M22AIE247_{}_".format(model_type) +"_".join(["{}_{}".format(k,v) for k,v in best_hyperparams.items()]) + ".joblib"
+    print(model_path)
+    # save the best_model    
+    dump(best_model, model_path)
+   
+    return best_hyperparams, model_path, best_accuracy
+
+
+def tune_hparams_logistic( X_train, Y_train,x_dev, y_dev,list_of_all_param_combination,model_type ='lr'):
+    
+    # generating the all combinations of hyper parameters
+    keys, values = zip(*list_of_all_param_combination.items())
+
+    combinations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
+    
+    
+    # default base configuration     
+    best_hyperparams = {}
+    best_model_score =[0,0]
+    best_model = None
+    avg_scores ={}
+    for model_params in combinations_dicts :
+        
+        # train model for each hyper parameters
+        current_model = train_model(X_train, Y_train, model_params, model_type="lr")
+        # predict the score for trained model 
+        current_model_scores = predict_and_eval(current_model, x_dev, y_dev)
+       
+       # compare the model performance with the base model 
+        if best_model_score[1] < round(np.average(current_model_scores),3) :
+            #intially best model is current model 
+            best_model = current_model
+            # averaging the current model scores
+            best_model_score[1] = round(np.average(current_model_scores),3)
+            #best_model_score[0] = str(kval) + "-" + str(cval)+ "-" + str(g)
+            best_hyperparams = model_params
+            best_accuracy = best_model_score[1]
+    
+    # defining the model path and model name wrt to the hyper parameters of the model 
+    model_path = "./models/M22AIE247_{}_".format(model_type) +"_".join(["{}_{}".format(k,v) for k,v in best_hyperparams.items()]) + ".joblib"
     print(model_path)
     # save the best_model    
     dump(best_model, model_path)
