@@ -25,7 +25,10 @@ def imagePrediction(model_type):
     input_json = request.get_json( )
     img1 = input_json['image']
     
+    # load best one lr, svm and tree model from load model function
     best_lr_model, best_svm_model, best_tree_model=load_models()
+
+    # Based on the model_type in route load the model of that type 
 
     if model_type == 'lr':
         loaded_best_model=best_lr_model
@@ -36,13 +39,17 @@ def imagePrediction(model_type):
 
     
     image1_1d_reshaped = np.array(img1).reshape(1, -1)
+
+    # do prediction from the best load model based on the route input
     prediction1 = loaded_best_model.predict(image1_1d_reshaped)
     print(prediction1)
     return str(prediction1)
 
 def load_models():
 
-    load_best_lr_model = load('.models/M22AIE247_lr_solver_lbfgs.joblib')
+    #load best one logistic, svm, tree model from model folder and return
+
+    load_best_lr_model = load('./models/M22AIE247_lr_solver_lbfgs.joblib')
     load_best_svm_model = load('./models/M22AIE247_svm_gamma_1_C_100_kernel_rbf.joblib')
     load_best_tree_model = load('./models/M22AIE247_tree_max_depth_100.joblib')
 

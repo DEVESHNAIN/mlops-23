@@ -1,5 +1,6 @@
 from utils import fetch_hyperparameter_combinations, split_train_dev_test,read_digits
 from joblib import dump, load
+from sklearn.linear_model import LogisticRegression
 
 def test_for_hparam_cominations_count():
     # a test case to check that all possible combinations of paramers are indeed generated
@@ -43,3 +44,17 @@ def test_data_splitting():
     assert  ((len(X_dev) == 20))
 
 
+def test_loaded_lr_nodel():
+
+    model_path='./models/M22AIE247_lr_solver_lbfgs.joblib'
+
+    # extract the solver from path
+    solver=model_path.split('_')[-1].split('.')[0]
+
+    # create a logistic model of same solver
+    model = LogisticRegression(solver=solver)
+
+    #load the model
+    load_model = load(model_path)
+    #assert both model are same instance or not
+    assert isinstance(load_model, LogisticRegression), f"Error : {model_path} is not a Logistic Regression model of {solver} solver type"

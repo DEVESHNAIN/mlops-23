@@ -25,6 +25,7 @@ def preprocessing_data(data):
 
     # normalize the samples
     normalized_data=preprocessing.normalize(data)
+    print("Data Normalized")
 
     return normalized_data
 
