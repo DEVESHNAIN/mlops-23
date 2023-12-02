@@ -77,7 +77,7 @@ for iterations in  range(no_of_iterations_run) :
             logistic_parameters['solver']=solver_list
 
             # ml_model_algorithms = ['tree','svm']
-            ml_model_algorithms = ['tree','svm','logisticRegression']
+            ml_model_algorithms = ['logisticRegression', 'tree','svm']
 
 
             

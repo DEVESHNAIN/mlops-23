@@ -20,12 +20,31 @@ def hello_world_post():
 
 
 # predict route decorator to get inferencing from model
-@app.route("/prediction", methods = ['POST'])
-def imagePrediction():
+@app.route("/predict/<model_type>", methods = ['POST'])
+def imagePrediction(model_type):
     input_json = request.get_json( )
     img1 = input_json['image']
-    load_best_model = load('./models/svm_gamma_0.001_C_1_kernel_rbf.joblib')
+    
+    best_lr_model, best_svm_model, best_tree_model=load_models()
+
+    if model_type == 'lr':
+        loaded_best_model=best_lr_model
+    elif model_type == 'svm':
+        loaded_best_model=best_svm_model
+    else:
+        loaded_best_model=best_tree_model
+
+    
     image1_1d_reshaped = np.array(img1).reshape(1, -1)
-    prediction1 = load_best_model.predict(image1_1d_reshaped)
+    prediction1 = loaded_best_model.predict(image1_1d_reshaped)
     print(prediction1)
     return str(prediction1)
+
+def load_models():
+
+    load_best_lr_model = load('.models/M22AIE247_lr_solver_lbfgs.joblib')
+    load_best_svm_model = load('./models/M22AIE247_svm_gamma_1_C_100_kernel_rbf.joblib')
+    load_best_tree_model = load('./models/M22AIE247_tree_max_depth_100.joblib')
+
+    return load_best_lr_model, load_best_svm_model, load_best_tree_model
+    
