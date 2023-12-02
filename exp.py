@@ -1,78 +1,124 @@
 """
-================================
-Recognizing hand-written digits
-================================
-
-This example shows how scikit-learn can be used to recognize images of
-hand-written digits, from 0-9.
+IIT J Mlops 23 batch repo
+Author: Devesh Nain 
+Roll No: M22AIE247
 
 """
 
 
-# Standard scientific Python imports
+#  Python imports
 import matplotlib.pyplot as plt
 
-# Import datasets, classifiers and performance metrics
+# Importing the  datasets, classifiers and performance metrics
 from sklearn import datasets, metrics, svm
 from sklearn.model_selection import train_test_split
 from utils import *
-import itertools
+
+# from skimage.transform import rescale, resize
+from joblib import dump, load
+from sklearn import tree
+
+import pandas as pd
+import argparse
 
 ###############################################################################
-# Digits dataset
+# passing inputs through argument parser
 
-# 1.read the dataset using read digit functin
-X, y = read_digits()
-sample_size=len(X)
+parser = argparse.ArgumentParser()
 
-print(f"Total no of sample in dataset = {sample_size}")
-height,width=X[0].shape
-print(f"Size of image: height is { height } and width is { width }")
+#parser.add_argument("number", type=int, help="an integer number")
+#input_args = parser.parse_args()
+#result = input_args.number * 2
+#print("Result:", result)
 
-
-# 3. Data splitting into multiple ratios to create train and test sets
-test_sizes = [0.1, 0.2, 0.3]
-dev_sizes = [0.1, 0.2, 0.3]
-
-test_sizes = [0.1]
-dev_sizes = [0.1]
-
-# print (itertools.product(test_sizes, dev_sizes))
-
-# Create a list of tuples with all combinations of hyper parameter gamma and C
-gamma_values = [0.001, 0.01, 0.1, 1, 10, 100]
-C_values = [0.1, 1, 2, 5, 10]
-
-hyper_params={}
-hyper_params['gamma'] = gamma_values
-hyper_params['C'] = C_values
-
-all_possible_param_combinations = fetch_hyperparameter_combinations(hyper_params)
-# print(all_possible_param_combinations)
-
-for test_size, dev_size in itertools.product(test_sizes, dev_sizes):
-    print(f"test_size={test_size} dev_size={dev_size} train_size={1 - test_size - dev_size}", end=' ')
+output_res = []
+no_of_iterations_run = 1
+for iterations in  range(no_of_iterations_run) :
+    # 1. get the digit dataset using our defined function
+    X, y = read_digits()
     
-    X_train, X_dev,X_test, y_train, y_dev, y_test = split_train_dev_test(X, y, test_size=test_size, dev_size=dev_size)
+    test_size = [0.1, 0.2, 0.3, 0.4]
+    dev_size = [0.1, 0.2, 0.3, 0.4]
+
+    # run iteration for each defined test and dev size splits
+
+    for i in test_size :
+        for j in dev_size : 
+
+            #split the dataset into train dev and test set
+
+            X_train, X_test,X_dev, y_train, y_test, y_dev = split_train_dev_test(X, y, test_size=i, dev_size=j)
+            
+            # pre process the splitted data set
+            X_train = preprocessing_data(X_train)
+
+            X_dev = preprocessing_data(X_dev)
+
+            X_test = preprocessing_data(X_test)
+            
+            
+            # training the data set on a different possible hyper parameters  
+
+            gamma_list = [0.0001, 0.0005, 0.001, 0.01, 0.1, 1]
+            C_list = [0.1, 1, 10, 100, 1000]
+            
+            # define svm ml model params
+            svm_parameters ={}
+            svm_parameters = {'gamma': gamma_list,'C' : C_list,'kernel' :['rbf','linear']}
+            
+            # define the tree ml model algos
+
+            max_depth_list = [5, 10, 15, 20, 50, 100]
+            tree_parameters = {}
+            tree_parameters['max_depth'] = max_depth_list
+            ml_model_algorithms = ['svm', 'tree']
+            
+            # for each model algorithm train a model and save the best model 
+
+            for ml_model_type in ml_model_algorithms:
+
+                # for decesion tree model 
+                if ml_model_type =="tree" :
+
+                    # tune the hyper parameter and capture the best scored trained model
+
+                    best_hyperparams, best_scored_model_path, best_model_accuracy = tune_hparams_tree( X_train, y_train,X_dev, y_dev,tree_parameters,model_type ='tree')
+                    
+                    # loading the best trained model        
+                    best_trained_model = load(best_scored_model_path)
+                    
+                    #evaluate the best trained model 
+                    train_accuracy,_ = predict_and_eval(best_trained_model, X_train, y_train)
+                    dev_accuracy,_ = predict_and_eval(best_trained_model, X_dev, y_dev)
+                    test_accuracy,_ = predict_and_eval(best_trained_model, X_test, y_test)
+                    
+                    current_model_output1 = {'ml_model_type': ml_model_type, 'iterations': iterations, 'train_accuracy' : train_accuracy, 'dev_accuracy': dev_accuracy, 'test_accuracy': test_accuracy}
+                    output_res.append(current_model_output1)
+
+                    print("Accuracy_test  : {0:2f}% Accuracy_dev  : {1:2f}% Accuracy_train  : {2:2f}% ".format((test_accuracy*100),(dev_accuracy*100),(train_accuracy*100)))
+                
+                # now training a support vector machine model 
+                if ml_model_type == "svm" :
+
+                     # tune the hyper parameter and capture the best scored trained model
+                    best_hyperparams, best_scored_model_path, best_model_accuracy = tune_hparams_svm( X_train, y_train,X_dev, y_dev,svm_parameters,model_type ='svm')
+               
+                    
+                    # load the best trained model         
+                    best_trained_model = load(best_scored_model_path)
+                    
+                    #evaluate the best trained model 
+                    train_accuracy,_ = predict_and_eval(best_trained_model, X_train, y_train)
+                    dev_accuracy,_ = predict_and_eval(best_trained_model, X_dev, y_dev)
+                    test_accuracy,_ = predict_and_eval(best_trained_model, X_test, y_test)
+                    
+                    current_model_output2 = {'ml_model_type': ml_model_type, 'iterations': iterations, 'train_accuracy' : train_accuracy, 'dev_accuracy': dev_accuracy, 'test_accuracy': test_accuracy}
+                    output_res.append(current_model_output2)
+                    
+                    print("Accuracy_test  : {0:2f}% Accuracy_dev  : {1:2f}% Accuracy_train  : {2:2f}% ".format((test_accuracy*100),(dev_accuracy*100),(train_accuracy*100)))
+                # load the best of both model          
+                #best_trained_model = load(best_scored_model_path)
     
-    # 4. Data preprocessing
-    X_train = preprocess_data(X_train)
-    X_test = preprocess_data(X_test)
-    X_dev = preprocess_data(X_dev)
-
-    # HYPERPARAMETER TUNING
-
-
-    best_hparams, best_model, best_dev_acc = tune_hparams(X_train, y_train, X_dev, y_dev, all_possible_param_combinations)
-
-    # Train  model on best hyper parameter
-
-    trained_model = train_model(X_train, y_train, best_hparams)
-    # calculate test and train accuracy on best hyper parameter trained model
-    test_accuracy = predict_and_eval(trained_model, X_test, y_test)
-    train_accuracy = predict_and_eval(trained_model, X_train, y_train)
-
-    print(f"dev_acc={best_dev_acc:.2f} test_acc={test_accuracy:.2f} train_acc={train_accuracy:.2f}")
-    
-    # log the best hyperparameters 
-    print(f"Best hyperparameters: gamma={best_hparams['gamma']}, C={best_hparams['C']}\n")
+                print('Train : {0} Test_size : {1} Dev_size :{2}'.format( round(1-i-j,1) , i,  j)," ", end = "")
+                
+                print(pd.DataFrame(output_res).groupby('ml_model_type').describe().T)

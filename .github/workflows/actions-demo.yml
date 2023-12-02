@@ -25,3 +25,5 @@ jobs:
         run: pytest
       - name: Run experiment
         run: python exp.py
+      - name: Build the Docker image
+        run: ./docker_run.sh
